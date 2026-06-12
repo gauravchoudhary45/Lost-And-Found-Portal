@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block main_content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-md-5">
+        <div class="card shadow p-4 border-0">
+            <div class="text-center mb-4">
+                <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                    <i class="bi bi-shield-lock-fill fs-3"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Portal Gateway Login</h3>
+                <p class="text-muted small">Please verify your authorization credentials to gain access.</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="mb-3">
+                    <label for="email" class="form-label small fw-bold text-secondary">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                        <input type="email" id="email" name="email" class="form-control bg-light border-start-0" placeholder="name@domain.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label small fw-bold text-secondary">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="password" name="password" class="form-control bg-light border-start-0" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm mb-3">
+                    Verify & Enter Portal
+                </button>
+            </form>
+
+            <div class="text-center mt-2 border-top pt-3">
+                <p class="small text-muted mb-0">Need a portal account? <a href="{{ url_for('register') }}" class="fw-bold text-decoration-none">Register Now</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

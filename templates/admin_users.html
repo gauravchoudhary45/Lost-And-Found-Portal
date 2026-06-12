@@ -1,0 +1,43 @@
+{% extends "admin_layout.html" %}
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-2 mb-3 border-bottom">
+    <h1 class="h2 fw-bold text-dark">Identity Clearance Management Matrix</h1>
+</div>
+
+<div class="card admin-card p-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr><th>User Node ID</th><th>Username</th><th>Registered Email</th><th>System Access Level</th><th>Clearance Operations</th></tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td><code>#{{ user.id }}</code></td>
+                    <td><strong>{{ user.username }}</strong></td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% if user.is_admin %}
+                            <span class="badge bg-indigo text-white p-2" style="background-color: #4f46e5;">System Administrator</span>
+                        {% else %}
+                            <span class="badge bg-light text-secondary border p-2">Standard Profile Node</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.id == current_user.id %}
+                            <button class="btn btn-outline-secondary btn-sm disabled" style="font-size: 0.8rem;">Active Session Account</button>
+                        {% else %}
+                            <a href="{{ url_for('toggle_user_admin_status', user_id=user.id) }}" 
+                               class="btn btn-sm fw-bold {{ 'btn-outline-danger' if user.is_admin else 'btn-outline-primary' }}" 
+                               style="font-size: 0.8rem; min-width: 130px;">
+                                {% if user.is_admin %}<i class="bi bi-shield-x me-1"></i> Revoke Admin{% else %}<i class="bi bi-shield-check me-1"></i> Promote Admin{% endif %}
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+{% block main_content %}
+
+<div class="card p-4 mb-5 shadow-sm bg-white border-0">
+    <h3 class="fw-bold text-primary mb-3"><i class="bi bi-search me-2"></i>Query Found Item Repositories</h3>
+    <form method="GET" action="{{ url_for('search_discover') }}">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Search keywords..." value="{{ request.args.get('q', '') }}">
+            </div>
+            <div class="col-md-4">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if request.args.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="location" class="form-control" placeholder="Search locations..." value="{{ request.args.get('location', '') }}">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3 px-4 fw-bold shadow-sm">Apply Filters</button>
+    </form>
+</div>
+
+
+<div class="d-flex align-items-center mb-3">
+    <div class="bg-primary bg-opacity-10 text-primary rounded p-2 me-2"><i class="bi bi-unlock fs-5"></i></div>
+    <h4 class="fw-bold text-dark mb-0">Active Unclaimed Items</h4>
+</div>
+<p class="text-muted small mb-4">These items have been turned in and are awaiting verification challenges from their rightful owners.</p>
+
+<div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+    {% for item in unclaimed %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 bg-white">
+                {% if item.image_file != 'no_image.jpg' %}
+                    <img src="{{ url_for('static', filename='item_pics/' + item.image_file) }}" class="card-img-top" style="height: 200px; object-fit: cover; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem;" alt="Item Photo">
+                {% endif %}
+                <div class="card-body d-flex flex-column p-4">
+                    <h5 class="card-title fw-bold text-dark mb-1">{{ item.title }}</h5>
+                    <span class="badge bg-light text-secondary border align-self-start mb-3 small">{{ item.category }}</span>
+                    <p class="card-text text-muted small flex-grow-1">{{ item.description }}</p>
+                    <div class="bg-light p-2 rounded small text-dark mb-3">
+                        📍 <strong>Location:</strong> {{ item.location }}
+                    </div>
+                    <a href="{{ url_for('claim_item', item_id=item.id) }}" class="btn btn-primary btn-sm w-100 py-2 fw-semibold shadow-sm">
+                        Initiate Claim Verification
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12 w-100 text-center py-4 bg-white rounded border border-dashed">
+            <p class="text-muted small mb-0">No active unclaimed records currently match your configuration criteria.</p>
+        </div>
+    {% endfor %}
+</div>
+
+
+<hr class="my-5 text-muted">
+
+
+<div class="d-flex align-items-center mb-3">
+    <div class="bg-success bg-opacity-10 text-success rounded p-2 me-2"><i class="bi bi-check-circle fs-5"></i></div>
+    <h4 class="fw-bold text-dark mb-0">Successfully Resolved Registry</h4>
+</div>
+<p class="text-muted small mb-4">These items have been successfully matched, approved by admins, and safely returned to their verified owners.</p>
+
+<div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+    {% for item in claimed %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 bg-white opacity-75">
+                {% if item.image_file != 'no_image.jpg' %}
+                    <img src="{{ url_for('static', filename='item_pics/' + item.image_file) }}" class="card-img-top grayscale" style="height: 200px; object-fit: cover; filter: grayscale(40%); border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem;" alt="Item Photo">
+                {% endif %}
+                <div class="card-body d-flex flex-column p-4 bg-light bg-opacity-10">
+                    <h5 class="card-title fw-bold text-muted mb-1"><del>{{ item.title }}</del></h5>
+                    <span class="badge bg-light text-muted border align-self-start mb-3 small">{{ item.category }}</span>
+                    <p class="card-text text-muted small flex-grow-1">{{ item.description }}</p>
+                    <div class="bg-light p-2 rounded small text-muted mb-3">
+                        📍 <strong>Location:</strong> {{ item.location }}
+                    </div>
+                    <div class="text-center bg-success bg-opacity-10 border border-success border-opacity-20 rounded py-2 text-success fw-bold small shadow-sm">
+                        <i class="bi bi-shield-fill-check me-1"></i> Claimed & Handed Over
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12 w-100 text-center py-4 bg-white rounded border border-dashed">
+            <p class="text-muted small mb-0">No claims have been officially finalized or authorized yet.</p>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "admin_layout.html" %}
+{% block admin_content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-2 mb-3 border-bottom">
+    <h1 class="h2 fw-bold text-dark">Central System Operations Overview</h1>
+    <span class="badge bg-dark px-3 py-2">System Live Status</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card admin-card p-3 border-start border-primary border-4 text-dark">
+            <div class="small text-muted fw-bold text-uppercase">Registered User Nodes</div>
+            <div class="h2 fw-bold mt-1 mb-0">{{ users_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card admin-card p-3 border-start border-danger border-4 text-dark">
+            <div class="small text-muted fw-bold text-uppercase">Lost Records Active</div>
+            <div class="h2 fw-bold mt-1 mb-0">{{ lost_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card admin-card p-3 border-start border-success border-4 text-dark">
+            <div class="small text-muted fw-bold text-uppercase">Found Listings Published</div>
+            <div class="h2 fw-bold mt-1 mb-0">{{ found_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card admin-card p-3 border-start border-warning border-4 text-dark">
+            <div class="small text-muted fw-bold text-uppercase">Claims Verification Queue</div>
+            <div class="h2 fw-bold mt-1 mb-0 text-warning">{{ pending_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card admin-card p-4">
+    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history me-2 text-muted"></i>Recent Claim Modifications Logs</h5>
+    {% if recent_claims %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr><th>ID</th><th>Asset Details</th><th>Claimant</th><th>Current State</th></tr>
+                </thead>
+                <tbody>
+                    {% for claim in recent_claims %}
+                    <tr>
+                        <td>#{{ claim.id }}</td>
+                        <td><strong>{{ claim.item.title }}</strong></td>
+                        <td>{{ claim.claimant.username }}</td>
+                        <td><span class="badge {{ 'bg-success' if claim.status == 'Approved / Authorized' else 'bg-warning text-dark' }}">{{ claim.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-end mt-2">
+            <a href="{{ url_for('admin_claims_dashboard') }}" class="btn btn-primary btn-sm px-3 fw-bold">Open Full Auditing Grid System <i class="bi bi-arrow-right-short"></i></a>
+        </div>
+    {% else %}
+        <p class="text-muted small mb-0">No historical claim verification events found inside tracking records.</p>
+    {% endif %}
+</div>
+{% endblock %}

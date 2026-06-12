@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block main_content %}
+<div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="col-md-5">
+        <div class="card shadow p-4 border-0">
+            <div class="text-center mb-4">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                    <i class="bi bi-person-plus-fill fs-3"></i>
+                </div>
+                <h3 class="fw-bold text-dark">Create Account</h3>
+                <p class="text-muted small">Join the portal to track lost items and submit verification claims.</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label small fw-bold text-secondary">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                        <input type="text" id="username" name="username" class="form-control bg-light border-start-0" placeholder="e.g., Gaurav" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label small fw-bold text-secondary">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                        <input type="email" id="email" name="email" class="form-control bg-light border-start-0" placeholder="name@domain.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label small fw-bold text-secondary">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="password" name="password" class="form-control bg-light border-start-0" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label small fw-bold text-secondary">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock-fill"></i></span>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control bg-light border-start-0" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mb-3">
+                    Sign Up & Register
+                </button>
+            </form>
+
+            <div class="text-center mt-2 border-top pt-3">
+                <p class="small text-muted mb-0">Already have an account? <a href="{{ url_for('login') }}" class="fw-bold text-decoration-none">Log In here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
