@@ -8,6 +8,7 @@ import secrets
 import os
 from functools import wraps
 import cloudinary
+import cloudinary.uploader
 
 # Global expanded category list covering nearly all types 
 CATEGORIES = [
@@ -36,15 +37,9 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def save_picture(form_file):
-    if not form_file or form_file.filename == '':
-        return 'no_image.jpg'
-    random_hex = secrets.token_hex(8)
-    _, f_ext = os.path.splitext(form_file.filename)
-    picture_fn = random_hex + f_ext.lower()
-    picture_path = os.path.join(app.config['UPLOAD_FOLDER'], picture_fn)
-    form_file.save(picture_path)
-    return picture_fn
+# ==========================================
+# 1. CORE AUTHENTICATION AND INDEX ROUTES
+# ==========================================
 
 @app.route("/")
 def index():
@@ -117,16 +112,23 @@ def login():
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
             flash('Welcome back!', 'success')
+            if user.is_admin:
+                return redirect(url_for('admin_portal_dashboard'))
             return redirect(url_for('dashboard'))
         else:
             flash('Login Unsuccessful. Please check credentials.', 'danger')
             
     return render_template('login.html', title='Login')
+
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+# ==========================================
+# 2. PROPERTY REPORTING PLUGINS (CLOUDINARY READY)
+# ==========================================
 
 @app.route("/report-lost", methods=['GET', 'POST'])
 @login_required
@@ -138,18 +140,20 @@ def report_lost():
         except ValueError:
             parsed_date = datetime.utcnow().date()
             
-        file = request.files.get('item_image') # match the 'name' attribute in your HTML
+        file = request.files.get('item_image')
+        image_url = "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500" # Lost fallback graphic
 
         if file and file.filename != '':
-    # 2. Upload the raw stream directly to Cloudinary's servers
-           upload_result = cloudinary.uploader.upload(file)
-    
-    # 3. Extract the permanent, secure HTTPS web URL string
-           image_url = upload_result.get('secure_url')
+            try:
+                upload_result = cloudinary.uploader.upload(file)
+                image_url = upload_result.get('secure_url')
+            except Exception as e:
+                print(f"Cloudinary lost upload trace error: {str(e)}")
+
         lost_log = LostItem(
             title=request.form.get('title'),
             category=request.form.get('category'),
-            location=request.form.get('location'), # Manual text string capture
+            location=request.form.get('location'), 
             date_lost=parsed_date,
             description=request.form.get('description'),
             image_file=image_url,
@@ -161,6 +165,7 @@ def report_lost():
         return redirect(url_for('dashboard'))
     return render_template('report_lost.html', categories=CATEGORIES, title='Report Lost Item')
 
+
 @app.route("/post-found", methods=['GET', 'POST'])
 @login_required
 def post_found():
@@ -171,28 +176,35 @@ def post_found():
         except ValueError:
             parsed_date = datetime.utcnow().date()
             
-        file = request.files.get('item_image') # match the 'name' attribute in your HTML
+        file = request.files.get('item_image')
+        image_url = "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=500" # Found fallback graphic
 
         if file and file.filename != '':
-    # 2. Upload the raw stream directly to Cloudinary's servers
-           upload_result = cloudinary.uploader.upload(file)
-    
-    # 3. Extract the permanent, secure HTTPS web URL string
-           image_url = upload_result.get('secure_url')
-        found_log = LostItem(
+            try:
+                upload_result = cloudinary.uploader.upload(file)
+                image_url = upload_result.get('secure_url')
+            except Exception as e:
+                print(f"Cloudinary found upload trace error: {str(e)}")
+
+        # FIXED CORE MODEL BUG: Changed from LostItem to FoundItem
+        found_log = FoundItem(
             title=request.form.get('title'),
             category=request.form.get('category'),
-            location=request.form.get('location'), # Manual text string capture
-            date_lost=parsed_date,
+            location=request.form.get('location'), 
+            date_found=parsed_date,
             description=request.form.get('description'),
             image_file=image_url,
-            owner=current_user
+            finder=current_user
         )
         db.session.add(found_log)
         db.session.commit()
         flash('Found item notice posted successfully!', 'success')
         return redirect(url_for('search_discover'))
     return render_template('post_found.html', categories=CATEGORIES, title='Post Found Item')
+
+# ==========================================
+# 3. INTERACTIVE DISCOVERY & VERIFICATION CLAIMS
+# ==========================================
 
 @app.route("/discover")
 @login_required
@@ -215,7 +227,6 @@ def search_discover():
         
     results = found_query.all()
 
-    # Split into two clean arrays for the frontend
     unclaimed_items = []
     claimed_items = []
     
@@ -226,7 +237,6 @@ def search_discover():
         else:
             unclaimed_items.append(item)
 
-    # Pass both arrays to templates separately
     return render_template(
         'search.html', 
         unclaimed=unclaimed_items, 
@@ -235,17 +245,31 @@ def search_discover():
         title='Discover Items'
     )
 
+
 @app.route("/claim/<int:item_id>", methods=['GET', 'POST'])
 @login_required
 def claim_item(item_id):
     target_item = FoundItem.query.get_or_404(item_id)
+    
+    # Block redundant claims if already authorized
+    if any(c.status == 'Approved / Authorized' for c in target_item.claims):
+        flash('This item has already been successfully resolved.', 'info')
+        return redirect(url_for('search_discover'))
+
     if request.method == 'POST':
         file = request.files.get('proof_image')
-        saved_filename = save_picture(file) if file else 'no_proof.jpg'
+        saved_filename_url = "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500" # Default invoice proof icon
+
+        if file and file.filename != '':
+            try:
+                upload_result = cloudinary.uploader.upload(file)
+                saved_filename_url = upload_result.get('secure_url')
+            except Exception as e:
+                print(f"Cloudinary claim validation file upload failure: {str(e)}")
         
         verification = Claim(
             proof_of_ownership=request.form.get('proof'),
-            image_proof=saved_filename,
+            image_proof=saved_filename_url, # Now saving secure long web string URL
             status="Pending Verification",
             claimant=current_user,
             item=target_item
@@ -256,12 +280,17 @@ def claim_item(item_id):
         return redirect(url_for('dashboard'))
     return render_template('claim.html', item=target_item, title='File Claim')
 
+# ==========================================
+# 4. ISOLATED SYSTEM CONTROL ADMINISTRATIVE HEADQUARTERS
+# ==========================================
+
 @app.route("/admin/claims")
 @login_required
 @admin_required
 def admin_claims_dashboard():
     all_claims = Claim.query.order_by(Claim.date_created.desc()).all()
     return render_template('admin_claims.html', claims=all_claims, title="Manage Claims")
+
 
 @app.route("/admin/claim/<int:claim_id>/<string:action>")
 @login_required
@@ -277,20 +306,15 @@ def process_claim_action(claim_id, action):
     db.session.commit()
     return redirect(url_for('admin_claims_dashboard'))
 
+
 @app.route("/admin/portal")
 @login_required
 @admin_required
 def admin_portal_dashboard():
-    """
-    HQ Control Center Home: Displays critical system metrics (total system 
-    counts and open requests) to provide administrative analytical visibility.
-    """
     total_users = User.query.count()
     total_lost = LostItem.query.count()
     total_found = FoundItem.query.count()
     pending_claims = Claim.query.filter_by(status='Pending Verification').count()
-    
-    # Grab recent system logs to populate an audit feed
     recent_claims = Claim.query.order_by(Claim.date_created.desc()).limit(5).all()
     
     return render_template(
@@ -308,10 +332,6 @@ def admin_portal_dashboard():
 @login_required
 @admin_required
 def admin_users_management():
-    """
-    User Clerical Center: Displays all registered accounts and handles 
-    in-app security clearance promotions directly.
-    """
     all_users = User.query.order_by(User.username.asc()).all()
     return render_template('admin_users.html', users=all_users, title="User Clearance Matrix")
 
@@ -320,17 +340,12 @@ def admin_users_management():
 @login_required
 @admin_required
 def toggle_user_admin_status(user_id):
-    """
-    Modifies security clearance. Prevents administrative lockouts by restricting 
-    users from demoting their own active accounts.
-    """
     target_user = User.query.get_or_404(user_id)
     
     if target_user.id == current_user.id:
         flash("Security Conflict: You cannot revoke admin access from your own current session profile.", "danger")
         return redirect(url_for('admin_users_management'))
         
-    # Invert the database boolean switch
     target_user.is_admin = not target_user.is_admin
     db.session.commit()
     
