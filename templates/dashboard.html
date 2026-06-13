@@ -12,10 +12,8 @@
 
 <hr class="mb-4 text-muted">
 
-<!-- 3-Column Split Interface Layout -->
 <div class="row">
     
-    <!-- COLUMN 1: Your Reported Lost Items -->
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card shadow-sm border-0 h-100 p-3 bg-white">
             <div class="d-flex align-items-center mb-3">
@@ -27,12 +25,17 @@
                 <div class="list-group list-group-flush overflow-auto" style="max-height: 450px;">
                     {% for item in lost_items %}
                         <div class="list-group-item px-0 py-3 border-bottom text-wrap">
-                            <div class="d-flex w-100 justify-content-between align-items-start">
-                                <h6 class="mb-1 fw-bold text-dark">{{ item.title }}</h6>
-                                <small class="text-muted text-nowrap ms-2">{{ item.date_lost.strftime('%Y-%m-%d') }}</small>
+                            <div class="d-flex align-items-start border-0">
+                                <img src="{{ item.image_file }}" class="rounded me-3 shadow-sm border" style="width: 55px; height: 55px; object-fit: cover;" alt="Lost Property">
+                                <div class="w-100">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.95rem;">{{ item.title }}</h6>
+                                        <small class="text-muted text-nowrap ms-2" style="font-size: 0.75rem;">{{ item.date_lost.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <span class="badge bg-light text-secondary border small mb-2 d-inline-block" style="font-size: 0.7rem;">{{ item.category }}</span>
+                                    <p class="mb-0 text-muted small">📍 <em>{{ item.location }}</em></p>
+                                </div>
                             </div>
-                            <span class="badge bg-light text-secondary border small mb-2 d-inline-block">{{ item.category }}</span>
-                            <p class="mb-0 text-muted small text-truncate-2">📍 <em>{{ item.location }}</em></p>
                         </div>
                     {% endfor %}
                 </div>
@@ -45,7 +48,6 @@
         </div>
     </div>
 
-    <!-- COLUMN 2: Items Found & Posted By User -->
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card shadow-sm border-0 h-100 p-3 bg-white">
             <div class="d-flex align-items-center mb-3">
@@ -57,28 +59,31 @@
                 <div class="list-group list-group-flush overflow-auto" style="max-height: 450px;">
                     {% for item in current_user.found_items %}
                         <div class="list-group-item px-0 py-3 border-bottom text-wrap">
-                            <div class="d-flex w-100 justify-content-between align-items-start">
-                                <h6 class="mb-1 fw-bold text-dark">{{ item.title }}</h6>
-                                <small class="text-muted text-nowrap ms-2">{{ item.date_found.strftime('%Y-%m-%d') }}</small>
-                            </div>
-                            <span class="badge bg-light text-secondary border small mb-2 d-inline-block">{{ item.category }}</span>
-                            <p class="mb-2 text-muted small">📍 <em>{{ item.location }}</em></p>
-
-                            <!-- NEW: REVEAL CLAIMANT CONTACT UPON APPROVAL -->
-                            {% for claim in item.claims %}
-                                {% if claim.status == 'Approved / Authorized' %}
-                                    <div class="p-2 bg-success bg-opacity-10 border border-success border-opacity-20 rounded mt-2">
-                                        <span class="text-success fw-bold d-block mb-1 small" style="font-size: 0.8rem;">
-                                            <i class="bi bi-unlock-fill me-1"></i> Owner Claim Approved!
-                                        </span>
-                                        <div class="text-muted" style="font-size: 0.75rem; line-height: 1.4;">
-                                            <strong>Owner Username:</strong> {{ claim.claimant.username }}<br>
-                                            <strong>Contact Email:</strong> <a href="mailto:{{ claim.claimant.email }}" class="text-decoration-none fw-semibold text-success">{{ claim.claimant.email }}</a>
-                                        </div>
+                            <div class="d-flex align-items-start border-0">
+                                <img src="{{ item.image_file }}" class="rounded me-3 shadow-sm border" style="width: 55px; height: 55px; object-fit: cover;" alt="Found Asset">
+                                <div class="w-100">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.95rem;">{{ item.title }}</h6>
+                                        <small class="text-muted text-nowrap ms-2" style="font-size: 0.75rem;">{{ item.date_found.strftime('%Y-%m-%d') }}</small>
                                     </div>
-                                {% endif %}
-                            {% endfor %}
+                                    <span class="badge bg-light text-secondary border small mb-2 d-inline-block" style="font-size: 0.7rem;">{{ item.category }}</span>
+                                    <p class="mb-2 text-muted small">📍 <em>{{ item.location }}</em></p>
 
+                                    {% for claim in item.claims %}
+                                        {% if claim.status == 'Approved / Authorized' %}
+                                            <div class="p-2 bg-success bg-opacity-10 border border-success border-opacity-20 rounded mt-2 shadow-sm">
+                                                <span class="text-success fw-bold d-block mb-1 small" style="font-size: 0.75rem;">
+                                                    <i class="bi bi-unlock-fill me-1"></i> Owner Claim Verified!
+                                                </span>
+                                                <div class="text-dark opacity-75" style="font-size: 0.75rem; line-height: 1.4;">
+                                                    <strong>Owner:</strong> {{ claim.claimant.username }}<br>
+                                                    <strong>Contact:</strong> <a href="mailto:{{ claim.claimant.email }}" class="text-decoration-none fw-semibold text-success">{{ claim.claimant.email }}</a>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
@@ -91,7 +96,6 @@
         </div>
     </div>
 
-    <!-- COLUMN 3: Claims Audit Tracker & Notifications -->
     <div class="col-xl-4 col-12 mb-4">
         <div class="card shadow-sm border-0 h-100 p-3 bg-white">
             <div class="d-flex align-items-center mb-3">
@@ -104,21 +108,21 @@
                     {% for claim in claims %}
                         <div class="p-3 border rounded mb-3 bg-light bg-opacity-50">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold text-dark small text-truncate" style="max-width: 65%;">{{ claim.item.title }}</span>
-                                <span class="badge {{ 'bg-success' if claim.status == 'Approved / Authorized' else 'bg-warning text-dark' }} font-monospace" style="font-size: 0.75rem;">{{ claim.status }}</span>
+                                <span class="fw-bold text-dark small text-truncate" style="max-width: 60%; font-size: 0.9rem;">{{ claim.item.title }}</span>
+                                <span class="badge {% if claim.status == 'Approved / Authorized' %}bg-success{% elif 'Rejected' in claim.status %}bg-danger{% else %}bg-warning text-dark{% endif %} font-monospace" style="font-size: 0.7rem;">{{ claim.status }}</span>
                             </div>
                             
                             {% if claim.status == 'Approved / Authorized' %}
-                                <div class="p-2 bg-white border border-success border-opacity-50 rounded mt-2">
-                                    <span class="text-success fw-bold d-block mb-1 small"><i class="bi bi-check-circle-fill me-1"></i> Match Approved! Details:</span>
-                                    <div class="small text-muted" style="font-size: 0.8rem; line-height: 1.4;">
+                                <div class="p-2 bg-white border border-success border-opacity-50 rounded mt-2 shadow-sm">
+                                    <span class="text-success fw-bold d-block mb-1 small" style="font-size: 0.75rem;"><i class="bi bi-check-circle-fill me-1"></i> Match Approved! Contact Unlocked:</span>
+                                    <div class="small text-dark opacity-75" style="font-size: 0.75rem; line-height: 1.4;">
                                         <strong>Finder Profile:</strong> {{ claim.item.finder.username }}<br>
-                                        <strong>Direct Email:</strong> <a href="mailto:{{ claim.item.finder.email }}" class="text-decoration-none fw-semibold">{{ claim.item.finder.email }}</a>
+                                        <strong>Direct Email:</strong> <a href="mailto:{{ claim.item.finder.email }}" class="text-decoration-none fw-semibold text-primary">{{ claim.item.finder.email }}</a>
                                     </div>
                                 </div>
                             {% else %}
-                                <div class="p-2 bg-white border border-warning border-opacity-50 rounded mt-2 text-center">
-                                    <span class="text-muted d-block small"><i class="bi bi-hourglass-split me-1 text-warning"></i> Verification pending audit.</span>
+                                <div class="p-2 bg-white border border-warning border-opacity-50 rounded mt-2 text-center shadow-sm">
+                                    <span class="text-muted d-block small" style="font-size: 0.75rem;"><i class="bi bi-hourglass-split me-1 text-warning"></i> Verification pending admin audit desk.</span>
                                 </div>
                             {% endif %}
                         </div>
