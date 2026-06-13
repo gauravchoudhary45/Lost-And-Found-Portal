@@ -51,8 +51,7 @@
                         <td style="max-width: 300px;">
                             <p style="font-style: italic; margin-bottom: 5px;">"{{ claim.proof_of_ownership }}"</p>
                             {% if claim.image_proof != 'no_proof.jpg' %}
-                                <a href="{{ item.image_file }}" alt="Item Image" class="img-fluid"> target="_blank" style="font-size: 0.8rem; color: #39d353;">
-                                    🖼️ View Attached Image Proof
+                                <a href="{{ claim.item.image_file }}" class="img-fluid" target="_blank" style="font-size: 0.8rem; color: #39d353;">
                                 </a>
                             {% endif %}
                         </td>
