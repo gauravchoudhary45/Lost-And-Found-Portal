@@ -140,7 +140,7 @@ def report_lost():
         except ValueError:
             parsed_date = datetime.utcnow().date()
             
-        file = request.files.get('item_image')
+        file = request.files.get('item_image') # <--- This matches!
         image_url = "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500" # Lost fallback graphic
 
         if file and file.filename != '':
@@ -176,7 +176,8 @@ def post_found():
         except ValueError:
             parsed_date = datetime.utcnow().date()
             
-        file = request.files.get('item_image')
+        # Change this line inside post_found():
+        file = request.files.get('image_file')
         image_url = "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=500" # Found fallback graphic
 
         if file and file.filename != '':
