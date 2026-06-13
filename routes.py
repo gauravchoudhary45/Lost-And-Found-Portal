@@ -7,8 +7,34 @@ from datetime import datetime
 import secrets
 import os
 from functools import wraps
-import cloudinary
-import cloudinary.uploader
+import base64
+
+# Allowed image MIME types mapped from file extensions
+ALLOWED_IMAGE_EXT = {'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'gif': 'image/gif'}
+# Cap upload size so Base64 strings don't bloat the database (~2 MB raw)
+MAX_IMAGE_BYTES = 2 * 1024 * 1024
+
+
+def encode_image_to_data_uri(file):
+    """
+    Reads an uploaded image and returns a Base64 'data:' URI string.
+    Returns None if no valid image was provided or it is too large, so the
+    caller can keep its existing default placeholder.
+    """
+    if not file or file.filename == '':
+        return None
+
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    mime = ALLOWED_IMAGE_EXT.get(ext)
+    if not mime:
+        return None
+
+    data = file.read()
+    if not data or len(data) > MAX_IMAGE_BYTES:
+        return None
+
+    encoded = base64.b64encode(data).decode('utf-8')
+    return f"data:{mime};base64,{encoded}"
 
 # Global expanded category list covering nearly all types 
 CATEGORIES = [
@@ -127,7 +153,7 @@ def logout():
     return redirect(url_for('login'))
 
 # ==========================================
-# 2. PROPERTY REPORTING PLUGINS (CLOUDINARY READY)
+# 2. PROPERTY REPORTING PLUGINS (BASE64 IMAGE STORAGE)
 # ==========================================
 
 @app.route("/report-lost", methods=['GET', 'POST'])
@@ -143,13 +169,10 @@ def report_lost():
         
         file = request.files.get('item_image')
         image_url = "https://placehold.co/500x350/e0e0e0/666666?text=No+Image+Provided"
-        
-        if file and file.filename != '':
-            try:
-                upload_result = cloudinary.uploader.upload(file)
-                image_url = upload_result.get('secure_url')
-            except Exception as e:
-                print(f"Cloudinary Error: {str(e)}")
+
+        encoded_image = encode_image_to_data_uri(file)
+        if encoded_image:
+            image_url = encoded_image
 
         lost_log = LostItem(
             title=request.form.get('title'),
@@ -180,14 +203,11 @@ def post_found():
         # Change this line inside post_found():
         file = request.files.get('image_file') # <-- Verified Aligned
         image_url = "https://placehold.co/500x350/e0e0e0/666666?text=No+Image+Provided"
-        
-        if file and file.filename != '':
-            try:
-                upload_result = cloudinary.uploader.upload(file)
-                image_url = upload_result.get('secure_url')
-            except Exception as e:
-                print(f"Cloudinary Error: {str(e)}")
-                # FIXED CORE MODEL BUG: Changed from LostItem to FoundItem
+
+        encoded_image = encode_image_to_data_uri(file)
+        if encoded_image:
+            image_url = encoded_image
+
         found_log = FoundItem(
             title=request.form.get('title'),
             category=request.form.get('category'),
@@ -261,16 +281,13 @@ def claim_item(item_id):
         file = request.files.get('proof_image')
         saved_filename_url = "https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500" # Default invoice proof icon
 
-        if file and file.filename != '':
-            try:
-                upload_result = cloudinary.uploader.upload(file)
-                saved_filename_url = upload_result.get('secure_url')
-            except Exception as e:
-                print(f"Cloudinary claim validation file upload failure: {str(e)}")
+        encoded_image = encode_image_to_data_uri(file)
+        if encoded_image:
+            saved_filename_url = encoded_image
         
         verification = Claim(
             proof_of_ownership=request.form.get('proof'),
-            image_proof=saved_filename_url, # Now saving secure long web string URL
+            image_proof=saved_filename_url, # Stored as a Base64 data URI
             status="Pending Verification",
             claimant=current_user,
             item=target_item

@@ -24,8 +24,8 @@ class LostItem(db.Model):
     location = db.Column(db.String(150), nullable=False) 
     date_lost = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     description = db.Column(db.Text, nullable=False)
-    # INCREASED TO 300: Stores the absolute HTTPS Cloudinary asset link securely
-    image_file = db.Column(db.String(300), nullable=False, default='https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500')
+    # TEXT: Stores either an HTTPS link or a Base64 data URI of the uploaded image
+    image_file = db.Column(db.Text, nullable=False, default='https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
@@ -36,8 +36,8 @@ class FoundItem(db.Model):
     location = db.Column(db.String(150), nullable=False) 
     date_found = db.Column(db.Date, nullable=False, default=datetime.utcnow)
     description = db.Column(db.Text, nullable=False) 
-    # INCREASED TO 300: Prevents database truncation when handling complex cloud strings
-    image_file = db.Column(db.String(300), nullable=False, default='https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=500')
+    # TEXT: Stores either an HTTPS link or a Base64 data URI of the uploaded image
+    image_file = db.Column(db.Text, nullable=False, default='https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=500')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     claims = db.relationship('Claim', backref='item', lazy=True)
@@ -46,8 +46,8 @@ class FoundItem(db.Model):
 class Claim(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     proof_of_ownership = db.Column(db.Text, nullable=False)
-    # INCREASED TO 300: Holds multi-character receipts and invoice proof links from Cloudinary
-    image_proof = db.Column(db.String(300), nullable=False, default='https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500')
+    # TEXT: Holds either an HTTPS link or a Base64 data URI of the proof image
+    image_proof = db.Column(db.Text, nullable=False, default='https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500')
     status = db.Column(db.String(30), nullable=False, default='Pending Verification')
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
