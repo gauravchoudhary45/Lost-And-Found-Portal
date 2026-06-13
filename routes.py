@@ -51,210 +51,108 @@ def index():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
-
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    user_lost = current_user.lost_items
-    user_claims = current_user.claims_submitted
-    return render_template('dashboard.html', lost_items=user_lost, claims=user_claims, title="Dashboard")
+    lost_items = LostItem.query.filter_by(user_id=current_user.id).order_by(LostItem.date_posted.desc()).all()
+    found_items = FoundItem.query.filter_by(user_id=current_user.id).order_by(FoundItem.date_posted.desc()).all()
+    claims = Claim.query.filter_by(user_id=current_user.id).order_by(Claim.date_submitted.desc()).all()
+    return render_template('dashboard.html', title='My Dashboard', lost_items=lost_items, found_items=found_items, claims=claims)
 
-@app.route("/register", methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-        
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email', '').strip().lower() # Normalize email string
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password') # Capture confirmation
-        
-        # 1. SECURITY CHECK: Confirm Password Validation
-        if password != confirm_password:
-            flash('Password mismatch detected! Please match both password fields.', 'danger')
-            return redirect(url_for('register'))
-            
-        # 2. SECURITY CHECK: Domain Restriction Enforcement
-        if not email.endswith('@gmail.com'):
-            flash('Registration Rejected: You must use a valid @gmail.com address to register.', 'danger')
-            return redirect(url_for('register'))
-        
-        # 3. DATABASE CHECK: Verify Duplication Conflicts
-        user_exists = User.query.filter((User.username == username) | (User.email == email)).first()
-        if user_exists:
-            flash('That username or email is already taken!', 'danger')
-            return redirect(url_for('register'))
-        
-        # Save record securely if all criteria checks pass successfully
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, email=email, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
-        
-        flash('Account created successfully! You can now log in.', 'success')
-        return redirect(url_for('login'))
-        
-    return render_template('register.html', title='Create Account')
-
-
-@app.route("/login", methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-        
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower() # Normalize email inputs
-        password = request.form.get('password')
-        
-        # 1. GATEKEEPER EXCEPTION: Allow master admin or strictly enforce @gmail.com domain
-        if email != 'admin@portal.com' and not email.endswith('@gmail.com'):
-            flash('Access Denied: Invalid email authorization credentials.', 'danger')
-            return redirect(url_for('login'))
-        
-        user = User.query.filter_by(email=email).first()
-        
-        if user and bcrypt.check_password_hash(user.password, password):
-            login_user(user)
-            flash('Welcome back!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Login Unsuccessful. Please check credentials.', 'danger')
-            
-    return render_template('login.html', title='Login')
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
 
 @app.route("/report-lost", methods=['GET', 'POST'])
 @login_required
 def report_lost():
     if request.method == 'POST':
-        date_raw = request.form.get('date')
-        try:
-            parsed_date = datetime.strptime(date_raw, '%Y-%m-%d').date() if date_raw else datetime.utcnow().date()
-        except ValueError:
-            parsed_date = datetime.utcnow().date()
-            
-        file = request.files.get('item_image') # match the 'name' attribute in your HTML
-
-        if file and file.filename != '':
-    # 2. Upload the raw stream directly to Cloudinary's servers
-           upload_result = cloudinary.uploader.upload(file)
-    
-    # 3. Extract the permanent, secure HTTPS web URL string
-           image_url = upload_result.get('secure_url')
-        lost_log = LostItem(
-            title=request.form.get('title'),
-            category=request.form.get('category'),
-            location=request.form.get('location'), # Manual text string capture
-            date_lost=parsed_date,
-            description=request.form.get('description'),
-            image_file=image_url,
-            owner=current_user
-        )
-        db.session.add(lost_log)
+        title = request.form.get('title')
+        description = request.form.get('description')
+        location = request.form.get('location')
+        category = request.form.get('category')
+        
+        item = LostItem(title=title, description=description, location=location, category=category, user_id=current_user.id)
+        db.session.add(item)
         db.session.commit()
-        flash('Lost item reported successfully!', 'success')
+        flash('Your missing property profile configuration has been broadcasted!', 'success')
         return redirect(url_for('dashboard'))
-    return render_template('report_lost.html', categories=CATEGORIES, title='Report Lost Item')
+        
+    return render_template('report_lost.html', title='Report Lost Item')
+
 
 @app.route("/post-found", methods=['GET', 'POST'])
 @login_required
 def post_found():
     if request.method == 'POST':
-        date_raw = request.form.get('date')
-        try:
-            parsed_date = datetime.strptime(date_raw, '%Y-%m-%d').date() if date_raw else datetime.utcnow().date()
-        except ValueError:
-            parsed_date = datetime.utcnow().date()
-            
-        file = request.files.get('item_image') # match the 'name' attribute in your HTML
-
-        if file and file.filename != '':
-    # 2. Upload the raw stream directly to Cloudinary's servers
-           upload_result = cloudinary.uploader.upload(file)
-    
-    # 3. Extract the permanent, secure HTTPS web URL string
-           image_url = upload_result.get('secure_url')
-        found_log = LostItem(
-            title=request.form.get('title'),
-            category=request.form.get('category'),
-            location=request.form.get('location'), # Manual text string capture
-            date_lost=parsed_date,
-            description=request.form.get('description'),
-            image_file=image_url,
-            owner=current_user
-        )
-        db.session.add(found_log)
-        db.session.commit()
-        flash('Found item notice posted successfully!', 'success')
-        return redirect(url_for('search_discover'))
-    return render_template('post_found.html', categories=CATEGORIES, title='Post Found Item')
-
-@app.route("/discover")
-@login_required
-def search_discover():
-    query_str = request.args.get('q', '')
-    category_filter = request.args.get('category', '')
-    location_filter = request.args.get('location', '')
-    
-    found_query = FoundItem.query
-    
-    if query_str:
-        found_query = found_query.filter(
-            (FoundItem.title.ilike(f'%{query_str}%')) | 
-            (FoundItem.description.ilike(f'%{query_str}%'))
-        )
-    if category_filter:
-        found_query = found_query.filter_by(category=category_filter)
-    if location_filter:
-        found_query = found_query.filter(FoundItem.location.ilike(f'%{location_filter}%'))
+        title = request.form.get('title')
+        description = request.form.get('description')
+        location = request.form.get('location')
+        category = request.form.get('category')
+        image_file = request.files.get('image_file')
         
-    results = found_query.all()
+        # Default high-res fallback geometry if no snapshot image is provided
+        cloud_image_url = "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=500"
+        
+        if image_file and image_file.filename != '':
+            try:
+                # Stream binary data directly into the Cloudinary pipeline
+                upload_result = cloudinary.uploader.upload(image_file)
+                cloud_image_url = upload_result.get('secure_url')
+            except Exception as e:
+                flash(f"Cloud serverless pipeline failed. Error context: {str(e)}", 'warning')
 
-    # Split into two clean arrays for the frontend
-    unclaimed_items = []
-    claimed_items = []
-    
-    for item in results:
-        is_already_claimed = any(c.status == 'Approved / Authorized' for c in item.claims)
-        if is_already_claimed:
-            claimed_items.append(item)
-        else:
-            unclaimed_items.append(item)
+        item = FoundItem(title=title, description=description, location=location, category=category, image_file=cloud_image_url, user_id=current_user.id)
+        db.session.add(item)
+        db.session.commit()
+        flash('Discovered found asset recorded accurately!', 'success')
+        return redirect(url_for('search'))
+        
+    return render_template('post_found.html', title='Post Found Asset')
 
-    # Pass both arrays to templates separately
-    return render_template(
-        'search.html', 
-        unclaimed=unclaimed_items, 
-        claimed=claimed_items, 
-        categories=CATEGORIES, 
-        title='Discover Items'
-    )
 
-@app.route("/claim/<int:item_id>", methods=['GET', 'POST'])
+@app.route("/search")
+@login_required
+def search():
+    query = request.args.get('q', '')
+    if query:
+        # Relational SQL Wildcard scanning structure cross-queries all text metrics
+        found_items = FoundItem.query.filter(
+            (FoundItem.title.ilike(f'%{query}%')) | 
+            (FoundItem.description.ilike(f'%{query}%')) | 
+            (FoundItem.location.ilike(f'%{query}%'))
+        ).order_by(FoundItem.is_claimed.asc(), FoundItem.date_posted.desc()).all()
+    else:
+        found_items = FoundItem.query.order_by(FoundItem.is_claimed.asc(), FoundItem.date_posted.desc()).all()
+        
+    return render_template('search.html', title='Search Portal', found_items=found_items, search_query=query)
+
+
+@app.route("/item/<int:item_id>/claim", methods=['GET', 'POST'])
 @login_required
 def claim_item(item_id):
-    target_item = FoundItem.query.get_or_404(item_id)
-    if request.method == 'POST':
-        file = request.files.get('proof_image')
-        saved_filename = save_picture(file) if file else 'no_proof.jpg'
+    item = FoundItem.query.get_or_404(item_id)
+    if item.is_claimed:
+        flash('This item asset matrix has been claimed and archived.', 'info')
+        return redirect(url_for('search'))
         
-        verification = Claim(
-            proof_of_ownership=request.form.get('proof'),
-            image_proof=saved_filename,
-            status="Pending Verification",
-            claimant=current_user,
-            item=target_item
-        )
-        db.session.add(verification)
+    if request.method == 'POST':
+        proof_text = request.form.get('proof_text')
+        proof_image = request.files.get('proof_image')
+        
+        cloud_proof_url = None
+        if proof_image and proof_image.filename != '':
+            try:
+                upload_result = cloudinary.uploader.upload(proof_image)
+                cloud_proof_url = upload_result.get('secure_url')
+            except Exception as e:
+                flash(f"Cloud upload failure code exception: {str(e)}", 'danger')
+                return render_template('claim.html', item=item)
+
+        new_claim = Claim(proof_text=proof_text, proof_image=cloud_proof_url, user_id=current_user.id, item_id=item.id)
+        db.session.add(new_claim)
         db.session.commit()
-        flash('Verification claim submitted successfully.', 'info')
+        flash('Ownership verification challenge dispatched successfully!', 'success')
         return redirect(url_for('dashboard'))
-    return render_template('claim.html', item=target_item, title='File Claim')
+        
+    return render_template('claim.html', item=item)
 
 @app.route("/admin/claims")
 @login_required
