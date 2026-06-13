@@ -1,19 +1,24 @@
 {% extends "layout.html" %}
 {% block main_content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card p-4 shadow-sm bg-white">
-            <h2 class="fw-bold text-success mb-3">Post a Discovered Item Notice</h2>
+<div class="row justify-content-center my-4">
+    <div class="col-md-8 col-lg-6">
+        <div class="card p-4 p-md-5 shadow-sm bg-white border-0">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-success"><i class="bi bi-plus-circle-fill me-2"></i>Post a Discovered Item Notice</h2>
+                <p class="text-muted small">Log a discovered item to help its verified owner track it down securely.</p>
+            </div>
+            
             <form method="POST" action="{{ url_for('post_found') }}" enctype="multipart/form-data">
                 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Generalized Item Title</label>
-                    <input type="text" name="title" class="form-control" placeholder="e.g., Smart Phone, Set of Keys" required>
+                    <label class="form-label fw-semibold text-dark">Generalized Item Title</label>
+                    <input type="text" name="title" class="form-control py-2" placeholder="e.g., Smart Phone, Set of Keys" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Item Category</label>
-                    <select name="category" class="form-select" required>
+                    <label class="form-label fw-semibold text-dark">Item Category Placement</label>
+                    <select name="category" class="form-select py-2" required>
+                        <option value="" disabled selected>Choose the closest category placement...</option>
                         {% for cat in categories %}
                             <option value="{{ cat }}">{{ cat }}</option>
                         {% endfor %}
@@ -21,26 +26,28 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Where did you find it? (Manual Entry)</label>
-                    <input type="text" name="location" class="form-control" placeholder="e.g., Under the green bench in the main playground area" required>
+                    <label class="form-label fw-semibold text-dark">Where did you find it? (Manual Entry)</label>
+                    <input type="text" name="location" class="form-control py-2" placeholder="e.g., Under the green bench in the main playground area" required>
+                    <div class="form-text text-muted small">Input descriptive spatial context details to aid admin sorting loops.</div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Discovery Calendar Date</label>
-                    <input type="date" name="date" class="form-control" required>
+                    <label class="form-label fw-semibold text-dark">Discovery Calendar Date</label>
+                    <input type="date" name="date" class="form-control py-2" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Generalized Public Description</label>
-                    <textarea name="description" class="form-control" rows="4" placeholder="Omit sensitive specifications like passwords, cash values..." required></textarea>
+                    <label class="form-label fw-semibold text-dark">Generalized Public Description</label>
+                    <textarea name="description" class="form-control" rows="4" placeholder="Mention color, distinct scratches, physical geometry. Omit highly sensitive details like serial logs or cash values to preserve the verification loop..." required></textarea>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold">Attach Discovered Item Image</label>
-                    <input type="file" name="item_image" class="form-control" accept="image/*">
+                    <label class="form-label fw-semibold text-dark">Attach Discovered Item Image</label>
+                    <input type="file" name="image_file" class="form-control" accept="image/*">
+                    <div class="form-text text-muted small">This asset will automatically bypass local disk storage limitations and stream live to Cloudinary.</div>
                 </div>
 
-                <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Publish Found Item Notice</button>
+                <button type="submit" class="btn btn-success w-100 py-2.5 fw-bold font-monospace shadow-sm">PUBLISH FOUND ITEM NOTICE</button>
             </form>
         </div>
     </div>
