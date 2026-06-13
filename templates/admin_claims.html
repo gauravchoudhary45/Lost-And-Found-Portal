@@ -1,0 +1,68 @@
+{% extends "admin_layout.html" %}
+{% block admin_content %}
+<div style="margin-top: 2rem;">
+    <h2>Administrative Claims Management Panel</h2>
+    <p>Review custom proof challenges submitted by claimants to securely validate ownership rights.</p>
+    <hr>
+
+    {% if claims %}
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Claim ID</th>
+                        <th>Target Item</th>
+                        <th>Claimant User</th>
+                        <th>Submitted Ownership Proof</th>
+                        <th>Current Status</th>
+                        <th>Management Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for claim in claims %}
+                    <tr>
+                        <td>#{{ claim.id }}</td>
+                        <td><strong>{{ claim.item.title }}</strong><br><small>({{ claim.item.location }})</small></td>
+                        <td>{{ claim.claimant.username }}</td>
+                        <td style="max-width: 300px; font-style: italic;">"{{ claim.proof_of_ownership }}"</td>
+                        <td>
+                            {% if claim.status == 'Pending Verification' %}
+                                <mark><code>{{ claim.status }}</code></mark>
+                            {% elif claim.status == 'Approved / Authorized' %}
+                                <ins style="color: green;"><strong>{{ claim.status }}</strong></ins>
+                            {% else %}
+                                <del style="color: red;">{{ claim.status }}</del>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if claim.status == 'Pending Verification' %}
+                                <div style="display: flex; gap: 10px;">
+                                    <a href="{{ url_for('process_claim_action', claim_id=claim.id, action='approve') }}" class="button" style="background-color: green; border-color: green; padding: 4px 10px; font-size: 0.85rem;">
+                                        Approve
+                                    </a>
+                                    <a href="{{ url_for('process_claim_action', claim_id=claim.id, action='reject') }}" class="button contrast" style="padding: 4px 10px; font-size: 0.85rem;">
+                                        Reject
+                                    </a>
+                                </div>
+                            {% else %}
+                                <span style="color: #aaa; font-size: 0.85rem;">Decision Finalized</span>
+                            {% endif %}
+                        </td>
+                        <td style="max-width: 300px;">
+                            <p style="font-style: italic; margin-bottom: 5px;">"{{ claim.proof_of_ownership }}"</p>
+                            {% if claim.image_proof != 'no_proof.jpg' %}
+                                <a href="{{ item.image_file }}" alt="Item Image" class="img-fluid"> target="_blank" style="font-size: 0.8rem; color: #39d353;">
+                                    🖼️ View Attached Image Proof
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </figure>
+    {% else %}
+        <p>No verification claim tickets have been filed in the system yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
