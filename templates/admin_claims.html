@@ -14,7 +14,107 @@
                         <th>Target Item</th>
                         <th>Claimant User</th>
                         <th>Submitted Ownership Proof</th>
-                        <th>Current Status</th>
+                        <th>Current Status</th>{% extends "admin_layout.html" %}
+{% block admin_content %}
+<div class="container my-4">
+    <div class="d-flex align-items-center mb-3">
+        <div class="bg-warning bg-opacity-10 text-warning rounded p-2 me-3"><i class="bi bi-clipboard-check-fill fs-4"></i></div>
+        <div>
+            <h2 class="fw-bold text-dark mb-0">Administrative Claims Management Panel</h2>
+            <p class="text-muted mb-0">Review custom proof challenges submitted by claimants to securely validate ownership rights.</p>
+        </div>
+    </div>
+    
+    <hr class="mb-4 text-muted">
+
+    {% if claims %}
+        <div class="card shadow-sm border-0 bg-white">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark small font-monospace">
+                        <tr>
+                            <th class="ps-3">Claim ID</th>
+                            <th>Target Item</th>
+                            <th>Claimant User</th>
+                            <th>Submitted Ownership Proof</th>
+                            <th class="text-center">Verification File</th>
+                            <th class="text-center">Current Status</th>
+                            <th class="text-center">Management Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">#CLM_0{{ claim.id }}</td>
+                            
+                            <td>
+                                <span class="fw-bold text-dark d-block">{{ claim.item.title }}</span>
+                                <small class="text-muted"><i class="bi bi-geo-alt"></i> {{ claim.item.location }}</small>
+                            </td>
+                            
+                            <td>
+                                <span class="fw-semibold text-secondary">{{ claim.claimant.username }}</span>
+                                <br><small class="text-muted" style="font-size: 0.75rem;">{{ claim.claimant.email }}</small>
+                            </td>
+                            
+                            <td>
+                                <div class="text-secondary small text-wrap border-start ps-2 py-1 italic" style="max-width: 280px; font-style: italic;">
+                                    "{{ claim.proof_of_ownership }}"
+                                </div>
+                            </td>
+                            
+                            <td class="text-center">
+                                {% if claim.image_proof and 'photo-1554415707-6e8cfc93fe23' not in claim.image_proof %}
+                                    <a href="{{ claim.image_proof }}" target="_blank" class="d-inline-block position-relative">
+                                        <img src="{{ claim.image_proof }}" class="img-thumbnail shadow-sm" style="width: 50px; height: 50px; object-fit: cover;" alt="Receipt Asset">
+                                        <span class="position-absolute bottom-0 end-0 bg-dark text-white rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; font-size: 0.6rem;">
+                                            <i class="bi bi-fullscreen"></i>
+                                        </span>
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small font-monospace"><i class="bi bi-image-alt"></i> No Photo</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-center">
+                                {% if claim.status == 'Pending Verification' %}
+                                    <span class="badge bg-warning text-dark px-2 py-1.5 font-monospace" style="font-size: 0.75rem;"><i class="bi bi-hourglass-split"></i> PENDING</span>
+                                {% elif claim.status == 'Approved / Authorized' %}
+                                    <span class="badge bg-success px-2 py-1.5 font-monospace" style="font-size: 0.75rem;"><i class="bi bi-check-circle-fill"></i> APPROVED</span>
+                                {% else %}
+                                    <span class="badge bg-danger px-2 py-1.5 font-monospace" style="font-size: 0.75rem;"><i class="bi bi-x-circle-fill"></i> REJECTED</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-center">
+                                {% if claim.status == 'Pending Verification' %}
+                                    <div class="d-flex justify-content-center gap-1 font-monospace">
+                                        <a href="{{ url_for('process_claim_action', claim_id=claim.id, action='approve') }}" class="btn btn-success btn-sm font-monospace fw-bold px-2 py-1 shadow-sm">
+                                            <i class="bi bi-check2"></i> Approve
+                                        </a>
+                                        <a href="{{ url_for('process_claim_action', claim_id=claim.id, action='reject') }}" class="btn btn-outline-danger btn-sm font-monospace fw-bold px-2 py-1 shadow-sm">
+                                            <i class="bi bi-x"></i> Reject
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small italic font-monospace" style="font-size: 0.8rem;"><i class="bi bi-lock-fill text-secondary"></i> Sealed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5 bg-white rounded shadow-sm border">
+            <i class="bi bi-folder-x display-4 text-muted mb-2"></i>
+            <h5 class="text-secondary fw-semibold">Audit Workspace Clear</h5>
+            <p class="text-muted small mb-0">No verification claim tickets have been filed in the system registry matrix yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
                         <th>Management Actions</th>
                     </tr>
                 </thead>
