@@ -139,16 +139,17 @@ def report_lost():
             parsed_date = datetime.strptime(date_raw, '%Y-%m-%d').date() if date_raw else datetime.utcnow().date()
         except ValueError:
             parsed_date = datetime.utcnow().date()
-            
-        file = request.files.get('item_image') # <--- This matches!
-        image_url = "https://images.unsplash.com/photo-1595079676339-1534801ad6cf?w=500" # Lost fallback graphic
-
+     
+        
+        file = request.files.get('item_image')
+        image_url = "https://placehold.co/500x350/e0e0e0/666666?text=No+Image+Provided"
+        
         if file and file.filename != '':
             try:
                 upload_result = cloudinary.uploader.upload(file)
                 image_url = upload_result.get('secure_url')
             except Exception as e:
-                print(f"Cloudinary lost upload trace error: {str(e)}")
+                print(f"Cloudinary Error: {str(e)}")
 
         lost_log = LostItem(
             title=request.form.get('title'),
@@ -177,17 +178,16 @@ def post_found():
             parsed_date = datetime.utcnow().date()
             
         # Change this line inside post_found():
-        file = request.files.get('image_file')
-        image_url = "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=500" # Found fallback graphic
-
+        file = request.files.get('image_file') # <-- Verified Aligned
+        image_url = "https://placehold.co/500x350/e0e0e0/666666?text=No+Image+Provided"
+        
         if file and file.filename != '':
             try:
                 upload_result = cloudinary.uploader.upload(file)
                 image_url = upload_result.get('secure_url')
             except Exception as e:
-                print(f"Cloudinary found upload trace error: {str(e)}")
-
-        # FIXED CORE MODEL BUG: Changed from LostItem to FoundItem
+                print(f"Cloudinary Error: {str(e)}")
+                # FIXED CORE MODEL BUG: Changed from LostItem to FoundItem
         found_log = FoundItem(
             title=request.form.get('title'),
             category=request.form.get('category'),
